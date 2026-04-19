@@ -17,6 +17,10 @@
       <button class="button button--primary" type="submit">Filter</button>
     </form>
     <form method="post" action="/rescan" class="toolbar__actions">
+      <input type="hidden" name="q" value="{{ query }}">
+      {% if hero_patch %}
+      <input type="hidden" name="selected" value="{{ hero_patch.rel_path }}">
+      {% endif %}
       <button class="button button--ghost" type="submit">Rescan Library</button>
     </form>
   </section>
@@ -26,19 +30,23 @@
     <article class="surface pedal-card" id="current-patch">
       <div class="pedal-card__topline">
         <span class="badge badge--{{ hero_patch.source_family }}">{{ hero_patch.source_label }}</span>
-        {% if current_patch and current_patch.rel_path == hero_patch.rel_path %}
+        {% if hero_state == "live" %}
         <span class="badge badge--current">Live on Pedal</span>
-        {% else %}
+        {% elif hero_state == "selected" %}
         <span class="badge badge--secondary">Selected</span>
+        {% else %}
+        <span class="badge badge--secondary">Preview</span>
         {% endif %}
       </div>
 
       <div class="pedal-display">
         <p class="pedal-display__eyebrow">
-          {% if current_patch and current_patch.rel_path == hero_patch.rel_path %}
+          {% if hero_state == "live" %}
           Current Patch
-          {% else %}
+          {% elif hero_state == "selected" %}
           Selected Patch
+          {% else %}
+          Preview Patch
           {% endif %}
         </p>
         <h2>{{ hero_patch.display_name }}</h2>
@@ -64,6 +72,8 @@
       <div class="pedal-actions">
         <form method="post" action="/load">
           <input type="hidden" name="rel_path" value="{{ hero_patch.rel_path }}">
+          <input type="hidden" name="q" value="{{ query }}">
+          <input type="hidden" name="selected" value="{{ hero_patch.rel_path }}">
           <button class="button button--load" type="submit">Load This Patch</button>
         </form>
         <div class="pedal-actions__meta">
@@ -167,6 +177,8 @@
           <a class="button button--ghost" href="/?selected={{ patch.rel_path | urlencode }}{% if query %}&q={{ query | urlencode }}{% endif %}">Inspect</a>
           <form method="post" action="/load">
             <input type="hidden" name="rel_path" value="{{ patch.rel_path }}">
+            <input type="hidden" name="q" value="{{ query }}">
+            <input type="hidden" name="selected" value="{{ patch.rel_path }}">
             <button class="button button--mini" type="submit">Load</button>
           </form>
         </div>

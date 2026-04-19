@@ -62,7 +62,6 @@ def create_app(config_path: str | Path | None = None) -> FastAPI:
         groups = catalog.grouped(q)
         hero_knob_index = _default_knob_index(hero_patch)
         lcd_preview = build_patch_lines(hero_patch) if hero_patch else (" " * 16, " " * 16)
-        query_suffix = f"&q={q}" if q else ""
         return templates.TemplateResponse(
             request,
             "index.html",
@@ -73,24 +72,31 @@ def create_app(config_path: str | Path | None = None) -> FastAPI:
                 "hero_knob_index": hero_knob_index,
                 "current_patch": current_patch,
                 "current_state": current_state,
+                "selected_patch_rel_path": selected,
+                "hero_state": _hero_state(hero_patch, current_patch, selected),
                 "mount_status": request.app.state.services.deployment.mount_status(),
                 "companion_source": catalog.companion_source,
                 "notice": notice,
                 "error": error,
                 "query": q,
-                "query_suffix": query_suffix,
                 "lcd_preview": lcd_preview,
             },
         )
 
     @app.post("/load")
-    def load_patch(request: Request, rel_path: str = Form(...)):
+    def load_patch(
+        request: Request,
+        rel_path: str = Form(...),
+        q: str = Form(""),
+        selected: str | None = Form(None),
+    ):
         services = request.app.state.services
         patch = services.catalog.find(rel_path)
         if patch is None:
             target = _redirect_target(
                 "/",
-                selected=rel_path,
+                selected=selected or rel_path,
+                q=q,
                 error=f"Patch not found: {rel_path}",
             )
             return RedirectResponse(target, status_code=303)
@@ -107,7 +113,12 @@ def create_app(config_path: str | Path | None = None) -> FastAPI:
             )
             services.state_store.save(state)
             services.display.show_error(str(exc))
-            target = _redirect_target("/", selected=rel_path, error=str(exc))
+            target = _redirect_target(
+                "/",
+                selected=selected or rel_path,
+                q=q,
+                error=str(exc),
+            )
             return RedirectResponse(target, status_code=303)
 
         services.state_store.save(
@@ -118,14 +129,30 @@ def create_app(config_path: str | Path | None = None) -> FastAPI:
             )
         )
         services.display.show_ready(patch)
-        target = _redirect_target("/", selected=rel_path, notice=outcome.message)
+        target = _redirect_target(
+            "/",
+            selected=selected or rel_path,
+            q=q,
+            notice=outcome.message,
+        )
         return RedirectResponse(target, status_code=303)
 
     @app.post("/rescan")
-    def rescan_library():
+    def rescan_library(
+        q: str = Form(""),
+        selected: str | None = Form(None),
+    ):
         services = app.state.services
         services.catalog.reload()
-        return RedirectResponse(_redirect_target("/", notice="Library rescanned."), status_code=303)
+        return RedirectResponse(
+            _redirect_target(
+                "/",
+                selected=selected,
+                q=q,
+                notice="Library rescanned.",
+            ),
+            status_code=303,
+        )
 
     @app.get("/healthz")
     def healthz(request: Request):
@@ -177,6 +204,20 @@ def _default_knob_index(patch: PatchRecord | None) -> int:
         if knob.active:
             return index
     return 0
+
+
+def _hero_state(
+    hero_patch: PatchRecord | None,
+    current_patch: PatchRecord | None,
+    selected: str | None,
+) -> str:
+    if hero_patch is None:
+        return "preview"
+    if current_patch and current_patch.rel_path == hero_patch.rel_path:
+        return "live"
+    if selected and selected == hero_patch.rel_path:
+        return "selected"
+    return "preview"
 
 
 def _redirect_target(path: str, **params: str | None) -> str:

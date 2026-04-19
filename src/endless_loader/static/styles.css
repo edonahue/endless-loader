@@ -176,6 +176,15 @@ code {
   border-color: rgba(255, 255, 255, 0.22);
 }
 
+.button:focus-visible,
+.pedal-knob:focus-visible,
+.toolbar input:focus-visible,
+.link-row a:focus-visible {
+  outline: 2px solid rgba(98, 193, 255, 0.92);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(98, 193, 255, 0.16);
+}
+
 .button--primary,
 .button--load {
   background:
@@ -470,6 +479,18 @@ code {
   display: flex;
   flex-wrap: wrap;
   gap: 0.7rem;
+}
+
+.link-row a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0.7rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(98, 193, 255, 0.08);
+  color: var(--text);
 }
 
 .library-group {

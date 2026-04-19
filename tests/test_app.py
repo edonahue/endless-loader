@@ -84,6 +84,7 @@ def test_index_and_load_flow(tmp_path: Path) -> None:
     assert response.status_code == 200
     assert "Phase 90" in html
     assert "pedal-card" in html
+    assert "Preview" in html
     assert "Unused" in html
     assert "Speed" in html
 
@@ -101,3 +102,50 @@ def test_index_and_load_flow(tmp_path: Path) -> None:
     assert redirect.status_code == 303
     assert "Loaded+Phase+90" in redirect.headers["location"]
     assert (tmp_path / "pedal_mount" / "phase_90.endl").read_bytes() == b"patch-data"
+
+
+def test_load_and_rescan_preserve_query_context(tmp_path: Path) -> None:
+    library = tmp_path / "library" / "effects" / "builds"
+    library.mkdir(parents=True)
+    (library / "phase_90.endl").write_bytes(b"patch-data")
+    (tmp_path / "pedal_mount").mkdir()
+    _write_companion(tmp_path)
+    config_path = _write_config(tmp_path)
+
+    app = create_app(config_path)
+
+    load = next(
+        route.endpoint
+        for route in app.routes
+        if getattr(route, "path", None) == "/load"
+    )
+    rescan = next(
+        route.endpoint
+        for route in app.routes
+        if getattr(route, "path", None) == "/rescan"
+    )
+
+    load_request = Request(
+        {
+            "type": "http",
+            "method": "POST",
+            "path": "/load",
+            "headers": [],
+            "query_string": b"",
+            "app": app,
+        }
+    )
+    load_redirect = load(
+        load_request,
+        "effects/builds/phase_90.endl",
+        q="phase",
+        selected="effects/builds/phase_90.endl",
+    )
+    assert load_redirect.status_code == 303
+    assert "q=phase" in load_redirect.headers["location"]
+    assert "selected=effects%2Fbuilds%2Fphase_90.endl" in load_redirect.headers["location"]
+
+    rescan_redirect = rescan(q="phase", selected="effects/builds/phase_90.endl")
+    assert rescan_redirect.status_code == 303
+    assert "q=phase" in rescan_redirect.headers["location"]
+    assert "selected=effects%2Fbuilds%2Fphase_90.endl" in rescan_redirect.headers["location"]

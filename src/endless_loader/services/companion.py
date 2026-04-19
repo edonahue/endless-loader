@@ -24,9 +24,10 @@ class CompanionMetadataProvider:
         local_manifest = self._local_manifest_path()
         if local_manifest and local_manifest.exists():
             payload = self._read_json(local_manifest)
-            normalized = self._normalize_manifest(payload)
-            self._write_cache(payload)
-            return normalized, f"local:{local_manifest}"
+            if payload is not None:
+                normalized = self._normalize_manifest(payload)
+                self._write_cache(payload)
+                return normalized, f"local:{local_manifest}"
 
         if self.config.fetch_enabled:
             payload = self._fetch_remote_manifest()
@@ -38,7 +39,8 @@ class CompanionMetadataProvider:
         cache_path = self.config.cache_path
         if cache_path.exists():
             payload = self._read_json(cache_path)
-            return self._normalize_manifest(payload), f"cache:{cache_path}"
+            if payload is not None:
+                return self._normalize_manifest(payload), f"cache:{cache_path}"
 
         return {}, None
 
@@ -65,8 +67,11 @@ class CompanionMetadataProvider:
         cache_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
 
     @staticmethod
-    def _read_json(path: Path) -> dict[str, Any]:
-        return json.loads(path.read_text(encoding="utf-8"))
+    def _read_json(path: Path) -> dict[str, Any] | None:
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            return None
 
     def _normalize_manifest(self, payload: dict[str, Any]) -> dict[str, dict[str, Any]]:
         raw_patches = payload.get("patches", payload)
