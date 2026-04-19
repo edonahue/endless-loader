@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block content %}
+  {% if notice %}
+  <p class="message message--success">{{ notice }}</p>
+  {% endif %}
+  {% if error %}
+  <p class="message message--error">{{ error }}</p>
+  {% endif %}
+
+  <section class="toolbar surface">
+    <form method="get" action="/" class="toolbar__search">
+      <label class="toolbar__label" for="patch-search">Patch Search</label>
+      <input id="patch-search" type="search" name="q" value="{{ query }}" placeholder="Filter by name, path, or source">
+      {% if hero_patch %}
+      <input type="hidden" name="selected" value="{{ hero_patch.rel_path }}">
+      {% endif %}
+      <button class="button button--primary" type="submit">Filter</button>
+    </form>
+    <form method="post" action="/rescan" class="toolbar__actions">
+      <button class="button button--ghost" type="submit">Rescan Library</button>
+    </form>
+  </section>
+
+  {% if hero_patch %}
+  <section class="hero-grid">
+    <article class="surface pedal-card" id="current-patch">
+      <div class="pedal-card__topline">
+        <span class="badge badge--{{ hero_patch.source_family }}">{{ hero_patch.source_label }}</span>
+        {% if current_patch and current_patch.rel_path == hero_patch.rel_path %}
+        <span class="badge badge--current">Live on Pedal</span>
+        {% else %}
+        <span class="badge badge--secondary">Selected</span>
+        {% endif %}
+      </div>
+
+      <div class="pedal-display">
+        <p class="pedal-display__eyebrow">
+          {% if current_patch and current_patch.rel_path == hero_patch.rel_path %}
+          Current Patch
+          {% else %}
+          Selected Patch
+          {% endif %}
+        </p>
+        <h2>{{ hero_patch.display_name }}</h2>
+        <p>{{ hero_patch.description or "No companion notes yet. The patch is still loadable from the local library." }}</p>
+        <p class="pedal-display__path">{{ hero_patch.rel_path }}</p>
+      </div>
+
+      <div class="pedal-controls" data-knob-root data-default-knob="{{ hero_knob_index }}">
+        {% for knob in hero_patch.knobs %}
+        <button
+          type="button"
+          class="pedal-knob {% if not knob.active %}is-dim{% endif %}"
+          data-knob-trigger="{{ loop.index0 }}"
+          aria-controls="knob-detail-{{ loop.index0 }}"
+        >
+          <span class="pedal-knob__dial"></span>
+          <span class="pedal-knob__slot">{{ knob.slot|upper }}</span>
+          <span class="pedal-knob__label">{{ knob.label if knob.active else "Unused" }}</span>
+        </button>
+        {% endfor %}
+      </div>
+
+      <div class="pedal-actions">
+        <form method="post" action="/load">
+          <input type="hidden" name="rel_path" value="{{ hero_patch.rel_path }}">
+          <button class="button button--load" type="submit">Load This Patch</button>
+        </form>
+        <div class="pedal-actions__meta">
+          {% if current_state.deployed_at %}
+          <p>Last load: {{ current_state.deployed_at }}</p>
+          {% endif %}
+          {% if current_state.last_message and current_patch and current_patch.rel_path == hero_patch.rel_path %}
+          <p>{{ current_state.last_message }}</p>
+          {% endif %}
+        </div>
+      </div>
+    </article>
+
+    <aside class="surface patch-detail">
+      <div class="patch-detail__section">
+        <h3>Knob Detail</h3>
+        {% for knob in hero_patch.knobs %}
+        <article
+          id="knob-detail-{{ loop.index0 }}"
+          class="knob-detail {% if loop.index0 == hero_knob_index %}is-active{% endif %}"
+          data-knob-detail="{{ loop.index0 }}"
+        >
+          <p class="knob-detail__eyebrow">{{ knob.slot|title }} Knob</p>
+          <h4>{{ knob.label if knob.active else "Unused" }}</h4>
+          <p>{{ knob.description }}</p>
+          {% if knob.expression_note %}
+          <p class="knob-detail__expression">Expression: {{ knob.expression_note }}</p>
+          {% endif %}
+        </article>
+        {% endfor %}
+      </div>
+
+      <div class="patch-detail__section">
+        <h3>Actions</h3>
+        <dl class="action-list">
+          <div>
+            <dt>Short Press</dt>
+            <dd>{{ hero_patch.short_action or "Not documented." }}</dd>
+          </div>
+          <div>
+            <dt>Long Press</dt>
+            <dd>{{ hero_patch.long_action or "Not documented." }}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="patch-detail__section">
+        <h3>1602 LCD Preview</h3>
+        <div class="lcd-preview" aria-label="LCD preview">
+          <span>{{ lcd_preview[0] }}</span>
+          <span>{{ lcd_preview[1] }}</span>
+        </div>
+      </div>
+
+      {% if hero_patch.doc_url or hero_patch.source_url %}
+      <div class="patch-detail__section">
+        <h3>Companion Links</h3>
+        <div class="link-row">
+          {% if hero_patch.doc_url %}
+          <a href="{{ hero_patch.doc_url }}" target="_blank" rel="noreferrer">Docs</a>
+          {% endif %}
+          {% if hero_patch.source_url %}
+          <a href="{{ hero_patch.source_url }}" target="_blank" rel="noreferrer">Source</a>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </aside>
+  </section>
+  {% else %}
+  <section class="surface empty-state">
+    <h2>No patches found</h2>
+    <p>Point <code>library_root</code> at a directory containing <code>.endl</code> files, then rescan.</p>
+  </section>
+  {% endif %}
+
+  {% for group in groups %}
+  <section class="surface library-group">
+    <header class="library-group__header">
+      <div>
+        <p class="library-group__eyebrow">Source Family</p>
+        <h3>{{ group.label }}</h3>
+      </div>
+      <span class="library-group__count">{{ group.patches|length }} patches</span>
+    </header>
+
+    <ul class="patch-list">
+      {% for patch in group.patches %}
+      <li class="patch-row {% if hero_patch and patch.rel_path == hero_patch.rel_path %}is-selected{% endif %}">
+        <div class="patch-row__copy">
+          <p class="patch-row__title">{{ patch.display_name }}</p>
+          <p class="patch-row__meta">{{ patch.rel_path }}</p>
+        </div>
+        <div class="patch-row__badges">
+          <span class="badge badge--{{ patch.source_family }}">{{ patch.source_label }}</span>
+          {% if patch.active_knob_count == 1 %}
+          <span class="badge badge--secondary">1-knob voice</span>
+          {% endif %}
+        </div>
+        <div class="patch-row__actions">
+          <a class="button button--ghost" href="/?selected={{ patch.rel_path | urlencode }}{% if query %}&q={{ query | urlencode }}{% endif %}">Inspect</a>
+          <form method="post" action="/load">
+            <input type="hidden" name="rel_path" value="{{ patch.rel_path }}">
+            <button class="button button--mini" type="submit">Load</button>
+          </form>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endfor %}
+{% endblock %}

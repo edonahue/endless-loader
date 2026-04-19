@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Endless Loader</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="site-header">
+        <div class="site-header__copy">
+          <p class="site-header__eyebrow">Polyend Endless Patch Loader</p>
+          <h1>Endless Loader</h1>
+          <p class="site-header__summary">
+            Browse local patches, inspect pedal-style controls, and load one patch at a time onto a connected Endless pedal.
+          </p>
+        </div>
+        <div class="site-header__status">
+          <span class="status-pill {% if mount_status.ready %}is-ready{% else %}is-error{% endif %}">
+            {{ mount_status.label }}
+          </span>
+          {% if companion_source %}
+          <span class="status-pill is-secondary">Companion: {{ companion_source }}</span>
+          {% endif %}
+        </div>
+      </header>
+      <main class="page">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+    <script src="{{ url_for('static', path='app.js') }}"></script>
+  </body>
+</html>

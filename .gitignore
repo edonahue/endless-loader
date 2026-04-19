@@ -1,0 +1,18 @@
+# Virtualenv
+venv/
+.codex
+
+# Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# Runtime data
+data/runtime/
+data/pedal_mount/*
+!data/pedal_mount/.gitkeep
+data/companion_cache.json
+
+# Local config
+config.toml

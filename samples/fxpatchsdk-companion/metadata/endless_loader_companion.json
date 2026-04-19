@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "patches": {
+    "phase_90.endl": {
+      "display_name": "Phase 90",
+      "source_family": "custom_sdk",
+      "description": "One-knob Phase 90 style phaser with block or script voicing.",
+      "short_action": "Bypass toggle.",
+      "long_action": "Toggle Block vs Script voice.",
+      "source_url": "https://github.com/edonahue/FxPatchSDK/blob/master/effects/phase_90.cpp",
+      "doc_url": "https://github.com/edonahue/FxPatchSDK/blob/master/docs/phase-90-build-walkthrough.md",
+      "controls": [
+        {
+          "slot": "left",
+          "label": "Unused",
+          "lcd_label": "----",
+          "active": false,
+          "description": "Left knob is intentionally unused to preserve the one-knob pedal identity."
+        },
+        {
+          "slot": "mid",
+          "label": "Speed",
+          "lcd_label": "Spee",
+          "active": true,
+          "description": "Main phaser rate control from slow sweep to fast chew."
+        },
+        {
+          "slot": "right",
+          "label": "Mirrors Speed",
+          "lcd_label": "----",
+          "active": false,
+          "description": "Right lane is reserved for expression in the current SDK wrapper.",
+          "expression_note": "Expression mirrors Speed when attached."
+        }
+      ]
+    },
+    "tube_screamer.endl": {
+      "display_name": "Tube Screamer",
+      "source_family": "custom_sdk",
+      "description": "TS808 inspired overdrive with TS9 long-press voice toggle.",
+      "short_action": "Bypass toggle.",
+      "long_action": "Toggle TS808 vs TS9 voice.",
+      "source_url": "https://github.com/edonahue/FxPatchSDK/blob/master/effects/tube_screamer.cpp",
+      "doc_url": "https://github.com/edonahue/FxPatchSDK/blob/master/docs/tube-screamer-build-walkthrough.md",
+      "controls": [
+        {
+          "slot": "left",
+          "label": "Drive",
+          "lcd_label": "Driv",
+          "active": true,
+          "description": "Pushes the mid-forward clipping stage harder."
+        },
+        {
+          "slot": "mid",
+          "label": "Level",
+          "lcd_label": "Leve",
+          "active": true,
+          "description": "Output level centered near bypass around noon."
+        },
+        {
+          "slot": "right",
+          "label": "Tone",
+          "lcd_label": "Tone",
+          "active": true,
+          "description": "Bounded dark-to-bright tone sweep.",
+          "expression_note": "Expression pedal maps to Tone in this patch family."
+        }
+      ]
+    },
+    "Wax.endl": {
+      "display_name": "Wax",
+      "source_family": "official_plates",
+      "description": "Polyend vinyl wear plate with drift, speed, and age controls.",
+      "short_action": "Cycle dust state.",
+      "long_action": "Cycle vinyl modes.",
+      "doc_url": "https://github.com/edonahue/FxPatchSDK/blob/master/playground/polyend_plates/README.md",
+      "controls": [
+        {
+          "slot": "left",
+          "label": "Drift",
+          "lcd_label": "Drif",
+          "active": true,
+          "description": "Pitch instability depth and unruliness."
+        },
+        {
+          "slot": "mid",
+          "label": "Speed",
+          "lcd_label": "Spee",
+          "active": true,
+          "description": "Modulation speed."
+        },
+        {
+          "slot": "right",
+          "label": "Age",
+          "lcd_label": "Age-",
+          "active": true,
+          "description": "Record wear macro control."
+        }
+      ]
+    }
+  }
+}
