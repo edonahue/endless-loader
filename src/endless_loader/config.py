@@ -42,6 +42,18 @@ class CompanionConfig:
 
 
 @dataclass(frozen=True)
+class UsbConfig:
+    mode: str = "host"
+    expected_label: str | None = None
+    expected_uuid: str | None = None
+    auto_eject_after_write: bool = False
+    verify_hash: bool = True
+    discovery_timeout_seconds: int = 5
+    helper_endpoint: str = "http://127.0.0.1:8755"
+    log_path: Path = Path("data/runtime/usb_operations.jsonl")
+
+
+@dataclass(frozen=True)
 class Settings:
     config_path: Path
     library_root: Path
@@ -51,6 +63,7 @@ class Settings:
     lcd: LcdConfig = field(default_factory=LcdConfig)
     buttons: ButtonConfig = field(default_factory=ButtonConfig)
     companion: CompanionConfig = field(default_factory=CompanionConfig)
+    usb: UsbConfig = field(default_factory=UsbConfig)
 
 
 def _resolve_path(base: Path, raw: str | None, fallback: str) -> Path:
@@ -90,6 +103,7 @@ def load_settings(config_path: str | Path | None = None) -> Settings:
     lcd = _get_section(data, "lcd")
     buttons = _get_section(data, "buttons")
     companion = _get_section(data, "companion")
+    usb = _get_section(data, "usb")
 
     return Settings(
         config_path=path.resolve(),
@@ -126,6 +140,20 @@ def load_settings(config_path: str | Path | None = None) -> Settings:
                 "data/companion_cache.json",
             ),
         ),
+        usb=UsbConfig(
+            mode=str(usb.get("mode", "host")),
+            expected_label=_optional_str(usb.get("expected_label")),
+            expected_uuid=_optional_str(usb.get("expected_uuid")),
+            auto_eject_after_write=bool(usb.get("auto_eject_after_write", False)),
+            verify_hash=bool(usb.get("verify_hash", True)),
+            discovery_timeout_seconds=int(usb.get("discovery_timeout_seconds", 5)),
+            helper_endpoint=str(usb.get("helper_endpoint", "http://127.0.0.1:8755")),
+            log_path=_resolve_path(
+                base,
+                usb.get("log_path"),
+                "data/runtime/usb_operations.jsonl",
+            ),
+        ),
     )
 
 
@@ -133,3 +161,9 @@ def _optional_int(value: object) -> int | None:
     if value in (None, ""):
         return None
     return int(value)
+
+
+def _optional_str(value: object) -> str | None:
+    if value in (None, ""):
+        return None
+    return str(value)

@@ -26,3 +26,12 @@ fetch_enabled = true
 timeout_seconds = 5
 cache_path = "/data/companion_cache.json"
 
+[usb]
+mode = "helper"
+expected_label = ""
+expected_uuid = ""
+auto_eject_after_write = false
+verify_hash = true
+discovery_timeout_seconds = 5
+helper_endpoint = "http://host.docker.internal:8755"
+log_path = "/data/runtime/usb_operations.jsonl"

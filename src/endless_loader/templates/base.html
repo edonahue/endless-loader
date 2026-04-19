@@ -17,9 +17,11 @@
           </p>
         </div>
         <div class="site-header__status">
-          <span class="status-pill {% if mount_status.ready %}is-ready{% else %}is-error{% endif %}">
+          <span class="status-pill {% if not mount_status.ready %}is-error{% elif mount_status.state == 'mounted' %}is-ready{% else %}is-secondary{% endif %}">
             {{ mount_status.label }}
           </span>
+          <span class="status-pill is-secondary">Backend: {{ mount_status.backend|upper }}</span>
+          <span class="status-pill is-secondary">Verify: Read-Back</span>
           {% if companion_source %}
           <span class="status-pill is-secondary">Companion: {{ companion_source }}</span>
           {% endif %}

@@ -1,10 +1,10 @@
-library_root = "samples/library"
-pedal_mount_path = "data/pedal_mount"
-state_path = "data/runtime/state.json"
+library_root = "./samples/library"
+pedal_mount_path = "./data/pedal_mount"
+state_path = "./data/runtime/state.json"
 
 [web]
-host = "0.0.0.0"
-port = 8080
+host = "127.0.0.1"
+port = 8755
 
 [lcd]
 enabled = false
@@ -22,9 +22,9 @@ fxpatchsdk_path = ""
 manifest_relpath = "metadata/endless_loader_companion.json"
 github_repo = "edonahue/FxPatchSDK"
 github_branch = "master"
-fetch_enabled = true
+fetch_enabled = false
 timeout_seconds = 5
-cache_path = "data/companion_cache.json"
+cache_path = "./data/companion_cache.json"
 
 [usb]
 mode = "host"
@@ -34,4 +34,4 @@ auto_eject_after_write = false
 verify_hash = true
 discovery_timeout_seconds = 5
 helper_endpoint = "http://127.0.0.1:8755"
-log_path = "data/runtime/usb_operations.jsonl"
+log_path = "./data/runtime/usb_helper_operations.jsonl"

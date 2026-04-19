@@ -5,11 +5,11 @@ services:
     image: endless-loader:local
     ports:
       - "8080:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       ENDLESS_LOADER_CONFIG: /config/config.toml
     volumes:
       - ./compose.config.toml:/config/config.toml:ro
       - ./samples/library:/data/library:ro
-      - ./data/pedal_mount:/mnt/endless
       - ./data/runtime:/data/runtime
-

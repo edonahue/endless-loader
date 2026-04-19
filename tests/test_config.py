@@ -23,6 +23,15 @@ address = "0x27"
 [companion]
 fxpatchsdk_path = "fxsdk"
 cache_path = "cache/companion.json"
+
+[usb]
+mode = "helper"
+expected_label = "ENDLESS"
+expected_uuid = "1234-ABCD"
+auto_eject_after_write = true
+verify_hash = false
+helper_endpoint = "http://helper.local:8755"
+log_path = "runtime/usb.jsonl"
 """.strip(),
         encoding="utf-8",
     )
@@ -38,4 +47,10 @@ cache_path = "cache/companion.json"
     assert settings.lcd.address == 0x27
     assert settings.companion.fxpatchsdk_path == (tmp_path / "fxsdk").resolve()
     assert settings.companion.cache_path == (tmp_path / "cache/companion.json").resolve()
-
+    assert settings.usb.mode == "helper"
+    assert settings.usb.expected_label == "ENDLESS"
+    assert settings.usb.expected_uuid == "1234-ABCD"
+    assert settings.usb.auto_eject_after_write is True
+    assert settings.usb.verify_hash is False
+    assert settings.usb.helper_endpoint == "http://helper.local:8755"
+    assert settings.usb.log_path == (tmp_path / "runtime/usb.jsonl").resolve()

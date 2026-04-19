@@ -1,8 +1,12 @@
+from datetime import datetime, timezone
 from pathlib import Path
+import shutil
 
 from starlette.requests import Request
 
 from endless_loader.main import create_app
+from endless_loader.models import DeploymentOutcome, MountStatus, PatchRecord
+from endless_loader.services.deploy import DeploymentService
 
 
 def _write_config(base: Path) -> Path:
@@ -16,6 +20,10 @@ state_path = "runtime/state.json"
 [companion]
 fxpatchsdk_path = "fxsdk"
 cache_path = "runtime/companion_cache.json"
+
+[usb]
+mode = "host"
+expected_label = "ENDLESS"
 """.strip(),
         encoding="utf-8",
     )
@@ -47,6 +55,48 @@ def _write_companion(base: Path) -> None:
     )
 
 
+class FakeBackend:
+    def __init__(self, mount: Path, *, ready: bool = True):
+        self.mount = mount
+        self.ready = ready
+
+    def status(self) -> MountStatus:
+        if not self.ready:
+            return MountStatus(
+                ready=False,
+                label="No Endless Volume",
+                detail="No removable volume matched the configured label/UUID.",
+                state="no_match",
+                backend="host",
+                expected_label="ENDLESS",
+            )
+        return MountStatus(
+            ready=True,
+            label="Mounted",
+            detail=f"Matched /dev/sdz1 at {self.mount}.",
+            state="mounted",
+            backend="host",
+            expected_label="ENDLESS",
+            device_node="/dev/sdz1",
+            device_label="ENDLESS",
+            mountpoint=str(self.mount),
+        )
+
+    def deploy(self, patch: PatchRecord) -> DeploymentOutcome:
+        destination = self.mount / patch.filename
+        shutil.copyfile(patch.abs_path, destination)
+        return DeploymentOutcome(
+            deployed_at=datetime.now(timezone.utc),
+            destination=destination,
+            message=f"Verified {patch.display_name} on {destination.name}.",
+            backend="host",
+            verified=True,
+            device_node="/dev/sdz1",
+            device_label="ENDLESS",
+            mountpoint=str(self.mount),
+        )
+
+
 def test_index_and_load_flow(tmp_path: Path) -> None:
     library = tmp_path / "library" / "effects" / "builds"
     library.mkdir(parents=True)
@@ -57,6 +107,10 @@ def test_index_and_load_flow(tmp_path: Path) -> None:
     config_path = _write_config(tmp_path)
 
     app = create_app(config_path)
+    app.state.services.deployment = DeploymentService(
+        FakeBackend(tmp_path / "pedal_mount"),
+        log_path=tmp_path / "runtime" / "usb.jsonl",
+    )
 
     index = next(
         route.endpoint
@@ -87,6 +141,8 @@ def test_index_and_load_flow(tmp_path: Path) -> None:
     assert "Preview" in html
     assert "Unused" in html
     assert "Speed" in html
+    assert "Deployment Status" in html
+    assert "Read-back hash on deploy" in html
 
     load_request = Request(
         {
@@ -100,7 +156,7 @@ def test_index_and_load_flow(tmp_path: Path) -> None:
     )
     redirect = load(load_request, "effects/builds/phase_90.endl")
     assert redirect.status_code == 303
-    assert "Loaded+Phase+90" in redirect.headers["location"]
+    assert "Verified+Phase+90" in redirect.headers["location"]
     assert (tmp_path / "pedal_mount" / "phase_90.endl").read_bytes() == b"patch-data"
 
 
@@ -113,6 +169,10 @@ def test_load_and_rescan_preserve_query_context(tmp_path: Path) -> None:
     config_path = _write_config(tmp_path)
 
     app = create_app(config_path)
+    app.state.services.deployment = DeploymentService(
+        FakeBackend(tmp_path / "pedal_mount"),
+        log_path=tmp_path / "runtime" / "usb.jsonl",
+    )
 
     load = next(
         route.endpoint
@@ -149,3 +209,40 @@ def test_load_and_rescan_preserve_query_context(tmp_path: Path) -> None:
     assert rescan_redirect.status_code == 303
     assert "q=phase" in rescan_redirect.headers["location"]
     assert "selected=effects%2Fbuilds%2Fphase_90.endl" in rescan_redirect.headers["location"]
+
+
+def test_index_disables_load_when_usb_is_not_ready(tmp_path: Path) -> None:
+    library = tmp_path / "library" / "effects" / "builds"
+    library.mkdir(parents=True)
+    (library / "phase_90.endl").write_bytes(b"patch-data")
+    (tmp_path / "pedal_mount").mkdir()
+    _write_companion(tmp_path)
+    config_path = _write_config(tmp_path)
+
+    app = create_app(config_path)
+    app.state.services.deployment = DeploymentService(
+        FakeBackend(tmp_path / "pedal_mount", ready=False),
+        log_path=tmp_path / "runtime" / "usb.jsonl",
+    )
+
+    index = next(
+        route.endpoint
+        for route in app.routes
+        if getattr(route, "path", None) == "/" and "GET" in getattr(route, "methods", [])
+    )
+    index_request = Request(
+        {
+            "type": "http",
+            "method": "GET",
+            "path": "/",
+            "headers": [],
+            "query_string": b"",
+            "app": app,
+        }
+    )
+
+    response = index(index_request)
+    html = response.body.decode("utf-8")
+    assert response.status_code == 200
+    assert "USB Not Ready" in html
+    assert "No removable volume matched the configured label/UUID." in html

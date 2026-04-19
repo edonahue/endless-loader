@@ -132,6 +132,43 @@ class DeploymentOutcome:
     deployed_at: datetime
     destination: Path
     message: str
+    backend: str = "host"
+    verified: bool = False
+    device_node: str | None = None
+    device_label: str | None = None
+    device_uuid: str | None = None
+    mountpoint: str | None = None
+    state: str = "verified"
+    ejected: bool = False
+    warning: str | None = None
+
+    def to_dict(self) -> dict[str, object]:
+        payload = asdict(self)
+        payload["destination"] = str(self.destination)
+        payload["deployed_at"] = self.deployed_at.isoformat(timespec="seconds")
+        return payload
+
+
+@dataclass(frozen=True)
+class UsbVolume:
+    device_node: str
+    parent_device_node: str | None = None
+    label: str | None = None
+    uuid: str | None = None
+    fstype: str | None = None
+    transport: str | None = None
+    hotplug: bool = False
+    removable: bool = False
+    mountpoint: str | None = None
+    mount_options: tuple[str, ...] = field(default_factory=tuple)
+
+    @property
+    def is_mounted(self) -> bool:
+        return bool(self.mountpoint)
+
+    @property
+    def is_read_only(self) -> bool:
+        return "ro" in self.mount_options
 
 
 @dataclass(frozen=True)
@@ -139,4 +176,15 @@ class MountStatus:
     ready: bool
     label: str
     detail: str
+    state: str = "unknown"
+    backend: str = "host"
+    expected_label: str | None = None
+    expected_uuid: str | None = None
+    device_node: str | None = None
+    device_label: str | None = None
+    device_uuid: str | None = None
+    mountpoint: str | None = None
+    last_verified: bool | None = None
 
+    def to_dict(self) -> dict[str, object]:
+        return asdict(self)

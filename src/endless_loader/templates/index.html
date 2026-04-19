@@ -25,6 +25,61 @@
     </form>
   </section>
 
+  <section class="surface usb-status">
+    <div class="usb-status__header">
+      <div>
+        <p class="library-group__eyebrow">USB Path</p>
+        <h3>Deployment Status</h3>
+      </div>
+      <span class="status-pill {% if not mount_status.ready %}is-error{% elif mount_status.state == 'mounted' %}is-ready{% else %}is-secondary{% endif %}">
+        {{ mount_status.label }}
+      </span>
+    </div>
+    <p class="usb-status__detail">{{ mount_status.detail }}</p>
+    <dl class="usb-meta">
+      <div>
+        <dt>Backend</dt>
+        <dd>{{ mount_status.backend|upper }}</dd>
+      </div>
+      <div>
+        <dt>Expected Identity</dt>
+        <dd>
+          {% if mount_status.expected_uuid %}
+          UUID {{ mount_status.expected_uuid }}
+          {% elif mount_status.expected_label %}
+          Label {{ mount_status.expected_label }}
+          {% else %}
+          Not configured
+          {% endif %}
+        </dd>
+      </div>
+      <div>
+        <dt>Matched Device</dt>
+        <dd>{{ mount_status.device_node or "Not discovered" }}</dd>
+      </div>
+      <div>
+        <dt>Volume Label</dt>
+        <dd>{{ mount_status.device_label or "Unknown" }}</dd>
+      </div>
+      <div>
+        <dt>Mountpoint</dt>
+        <dd>
+          {% if mount_status.mountpoint %}
+          {{ mount_status.mountpoint }}
+          {% elif mount_status.ready %}
+          Will mount on load
+          {% else %}
+          Unavailable
+          {% endif %}
+        </dd>
+      </div>
+      <div>
+        <dt>Verification</dt>
+        <dd>{% if mount_status.last_verified %}Last deploy verified{% else %}Read-back hash on deploy{% endif %}</dd>
+      </div>
+    </dl>
+  </section>
+
   {% if hero_patch %}
   <section class="hero-grid">
     <article class="surface pedal-card" id="current-patch">
@@ -74,7 +129,9 @@
           <input type="hidden" name="rel_path" value="{{ hero_patch.rel_path }}">
           <input type="hidden" name="q" value="{{ query }}">
           <input type="hidden" name="selected" value="{{ hero_patch.rel_path }}">
-          <button class="button button--load" type="submit">Load This Patch</button>
+          <button class="button button--load" type="submit" {% if not mount_status.ready %}disabled aria-disabled="true" title="{{ mount_status.detail }}"{% endif %}>
+            {% if mount_status.ready %}Load This Patch{% else %}USB Not Ready{% endif %}
+          </button>
         </form>
         <div class="pedal-actions__meta">
           {% if current_state.deployed_at %}
@@ -179,7 +236,7 @@
             <input type="hidden" name="rel_path" value="{{ patch.rel_path }}">
             <input type="hidden" name="q" value="{{ query }}">
             <input type="hidden" name="selected" value="{{ patch.rel_path }}">
-            <button class="button button--mini" type="submit">Load</button>
+            <button class="button button--mini" type="submit" {% if not mount_status.ready %}disabled aria-disabled="true" title="{{ mount_status.detail }}"{% endif %}>Load</button>
           </form>
         </div>
       </li>

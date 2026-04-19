@@ -1,48 +1,72 @@
-"""Patch deployment service."""
+"""Deployment service with USB backend orchestration and audit logging."""
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime, timezone
-import os
+import json
 from pathlib import Path
-import shutil
-from uuid import uuid4
 
 from endless_loader.models import DeploymentOutcome, MountStatus, PatchRecord
-
-
-class DeploymentError(RuntimeError):
-    """Raised when the pedal mount cannot be written."""
+from endless_loader.services.usb import DeploymentError, UsbBackend
 
 
 class DeploymentService:
-    def __init__(self, pedal_mount_path: Path):
-        self.pedal_mount_path = pedal_mount_path
+    def __init__(self, backend: UsbBackend, *, log_path: Path):
+        self.backend = backend
+        self.log_path = log_path
+        self._last_outcome: DeploymentOutcome | None = None
 
     def mount_status(self) -> MountStatus:
-        mount = self.pedal_mount_path
-        if not mount.exists():
-            return MountStatus(False, "Mount Missing", f"{mount} does not exist.")
-        if not mount.is_dir():
-            return MountStatus(False, "Mount Invalid", f"{mount} is not a directory.")
-        if not os.access(mount, os.W_OK):
-            return MountStatus(False, "Mount Read-Only", f"{mount} is not writable.")
-        return MountStatus(True, "Mount Ready", f"Writing to {mount}.")
+        status = self.backend.status()
+        if self._last_outcome is not None and status.last_verified is None:
+            status = replace(status, last_verified=self._last_outcome.verified)
+        return status
 
     def deploy(self, patch: PatchRecord) -> DeploymentOutcome:
-        status = self.mount_status()
-        if not status.ready:
-            raise DeploymentError(status.detail)
+        started_at = datetime.now(timezone.utc)
+        try:
+            outcome = self.backend.deploy(patch)
+        except DeploymentError as exc:
+            self._write_log(
+                {
+                    "event": "deploy_failed",
+                    "started_at": started_at.isoformat(timespec="seconds"),
+                    "finished_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                    "patch": _patch_payload(patch),
+                    "error": str(exc),
+                    "usb": exc.status.to_dict() if exc.status else None,
+                }
+            )
+            raise
 
-        destination = self.pedal_mount_path / patch.filename
-        temp_path = self.pedal_mount_path / f".{patch.filename}.tmp-{uuid4().hex}"
-        shutil.copyfile(patch.abs_path, temp_path)
-        os.replace(temp_path, destination)
-
-        deployed_at = datetime.now(timezone.utc)
-        message = f"Loaded {patch.display_name} to {destination.name}."
-        return DeploymentOutcome(
-            deployed_at=deployed_at,
-            destination=destination,
-            message=message,
+        self._last_outcome = outcome
+        self._write_log(
+            {
+                "event": "deploy_succeeded",
+                "started_at": started_at.isoformat(timespec="seconds"),
+                "finished_at": outcome.deployed_at.isoformat(timespec="seconds"),
+                "patch": _patch_payload(patch),
+                "outcome": outcome.to_dict(),
+            }
         )
+        return outcome
+
+    def _write_log(self, payload: dict[str, object]) -> None:
+        try:
+            self.log_path.parent.mkdir(parents=True, exist_ok=True)
+            with self.log_path.open("a", encoding="utf-8") as handle:
+                handle.write(json.dumps(payload, sort_keys=True))
+                handle.write("\n")
+        except OSError:
+            # Audit logging must not block a deploy.
+            return
+
+
+def _patch_payload(patch: PatchRecord) -> dict[str, object]:
+    return {
+        "rel_path": patch.rel_path,
+        "display_name": patch.display_name,
+        "filename": patch.filename,
+        "source_family": patch.source_family,
+    }

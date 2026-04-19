@@ -21,6 +21,7 @@ from endless_loader.services.inputs import NullInputAdapter
 from endless_loader.services.lcd import NullDisplayAdapter, build_display_adapter, build_patch_lines
 from endless_loader.services.scanner import LibraryCatalog
 from endless_loader.services.state import StateStore
+from endless_loader.services.usb import build_usb_backend
 
 
 @dataclass
@@ -55,18 +56,20 @@ def create_app(config_path: str | Path | None = None) -> FastAPI:
         notice: str | None = None,
         error: str | None = None,
     ):
-        catalog = request.app.state.services.catalog
-        current_state = request.app.state.services.state_store.load()
+        services = request.app.state.services
+        catalog = services.catalog
+        current_state = services.state_store.load()
         current_patch = catalog.find(current_state.current_patch_rel_path)
         hero_patch = _resolve_hero_patch(catalog, selected, current_state)
         groups = catalog.grouped(q)
         hero_knob_index = _default_knob_index(hero_patch)
         lcd_preview = build_patch_lines(hero_patch) if hero_patch else (" " * 16, " " * 16)
+        mount_status = services.deployment.mount_status()
         return templates.TemplateResponse(
             request,
             "index.html",
             {
-                "settings": request.app.state.services.settings,
+                "settings": services.settings,
                 "groups": groups,
                 "hero_patch": hero_patch,
                 "hero_knob_index": hero_knob_index,
@@ -74,7 +77,7 @@ def create_app(config_path: str | Path | None = None) -> FastAPI:
                 "current_state": current_state,
                 "selected_patch_rel_path": selected,
                 "hero_state": _hero_state(hero_patch, current_patch, selected),
-                "mount_status": request.app.state.services.deployment.mount_status(),
+                "mount_status": mount_status,
                 "companion_source": catalog.companion_source,
                 "notice": notice,
                 "error": error,
@@ -157,11 +160,13 @@ def create_app(config_path: str | Path | None = None) -> FastAPI:
     @app.get("/healthz")
     def healthz(request: Request):
         services = request.app.state.services
+        usb_status = services.deployment.mount_status()
         payload = {
             "status": "ok",
             "library_root": str(services.settings.library_root),
             "patch_count": len(services.catalog.patches),
-            "mount_ready": services.deployment.mount_status().ready,
+            "mount_ready": usb_status.ready,
+            "usb": usb_status.to_dict(),
             "companion_source": services.catalog.companion_source,
             "lcd_backend": services.display.__class__.__name__,
         }
@@ -179,7 +184,10 @@ def build_services(settings: Settings, templates: Jinja2Templates) -> AppService
         templates=templates,
         catalog=catalog,
         state_store=StateStore(settings.state_path),
-        deployment=DeploymentService(settings.pedal_mount_path),
+        deployment=DeploymentService(
+            build_usb_backend(settings.usb),
+            log_path=settings.usb.log_path,
+        ),
         display=build_display_adapter(settings.lcd),
         inputs=NullInputAdapter(),
     )
