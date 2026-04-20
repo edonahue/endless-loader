@@ -144,6 +144,8 @@ def test_index_and_load_flow(tmp_path: Path) -> None:
     assert "Volume is mounted and writable" in html
     assert "Read-back hash enabled" in html
     assert "Ready for a verified patch write." in html
+    assert "usb-beacon usb-beacon--ready" in html
+    assert "Endless USB" in html
 
     load_request = Request(
         {
@@ -248,3 +250,4 @@ def test_index_disables_load_when_usb_is_not_ready(tmp_path: Path) -> None:
     assert "USB Not Ready" in html
     assert "Connect the Endless storage volume" in html
     assert "Put the pedal in USB storage mode" in html
+    assert "usb-beacon usb-beacon--error" in html

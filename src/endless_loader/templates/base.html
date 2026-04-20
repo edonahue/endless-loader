@@ -31,6 +31,13 @@
         {% block content %}{% endblock %}
       </main>
     </div>
+    <aside class="usb-beacon usb-beacon--{{ usb_ui.tone }}" aria-live="polite" aria-label="Endless USB status">
+      <span class="usb-beacon__light" aria-hidden="true"></span>
+      <div class="usb-beacon__copy">
+        <p class="usb-beacon__label">Endless USB</p>
+        <p class="usb-beacon__status">{{ usb_ui.badge_label }}</p>
+      </div>
+    </aside>
     <script src="{{ url_for('static', path='app.js') }}"></script>
   </body>
 </html>

@@ -54,6 +54,86 @@ code {
   padding: 1rem 1rem 3rem;
 }
 
+.usb-beacon {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  min-width: 12rem;
+  padding: 0.8rem 0.95rem;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(9, 13, 18, 0.9);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(12px);
+}
+
+.usb-beacon__light {
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  background: currentColor;
+  box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.04);
+}
+
+.usb-beacon__copy {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.usb-beacon__label,
+.usb-beacon__status {
+  margin: 0;
+}
+
+.usb-beacon__label {
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.usb-beacon__status {
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.usb-beacon--ready {
+  color: #79f0a0;
+}
+
+.usb-beacon--pending {
+  color: #ffb24a;
+}
+
+.usb-beacon--error {
+  color: #ff7b7b;
+}
+
+.usb-beacon--ready .usb-beacon__light {
+  box-shadow:
+    0 0 0 0.25rem rgba(121, 240, 160, 0.12),
+    0 0 18px rgba(121, 240, 160, 0.7);
+}
+
+.usb-beacon--pending .usb-beacon__light {
+  box-shadow:
+    0 0 0 0.25rem rgba(255, 178, 74, 0.12),
+    0 0 18px rgba(255, 178, 74, 0.7);
+}
+
+.usb-beacon--error .usb-beacon__light {
+  box-shadow:
+    0 0 0 0.25rem rgba(255, 123, 123, 0.12),
+    0 0 18px rgba(255, 123, 123, 0.7);
+}
+
 .site-header {
   display: grid;
   gap: 1rem;
@@ -637,5 +717,14 @@ code {
   .site-header {
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: end;
+  }
+}
+
+@media (max-width: 759px) {
+  .usb-beacon {
+    left: 1rem;
+    right: 1rem;
+    bottom: 0.85rem;
+    min-width: 0;
   }
 }
