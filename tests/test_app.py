@@ -141,8 +141,9 @@ def test_index_and_load_flow(tmp_path: Path) -> None:
     assert "Preview" in html
     assert "Unused" in html
     assert "Speed" in html
-    assert "Deployment Status" in html
-    assert "Read-back hash on deploy" in html
+    assert "Volume is mounted and writable" in html
+    assert "Read-back hash enabled" in html
+    assert "Ready for a verified patch write." in html
 
     load_request = Request(
         {
@@ -245,4 +246,5 @@ def test_index_disables_load_when_usb_is_not_ready(tmp_path: Path) -> None:
     html = response.body.decode("utf-8")
     assert response.status_code == 200
     assert "USB Not Ready" in html
-    assert "No removable volume matched the configured label/UUID." in html
+    assert "Connect the Endless storage volume" in html
+    assert "Put the pedal in USB storage mode" in html

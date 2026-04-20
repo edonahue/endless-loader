@@ -14,7 +14,7 @@ from fastapi.templating import Jinja2Templates
 import uvicorn
 
 from endless_loader.config import Settings, load_settings
-from endless_loader.models import PatchRecord, RuntimeState
+from endless_loader.models import MountStatus, PatchRecord, RuntimeState
 from endless_loader.services.companion import CompanionMetadataProvider
 from endless_loader.services.deploy import DeploymentError, DeploymentService
 from endless_loader.services.inputs import NullInputAdapter
@@ -33,6 +33,20 @@ class AppServices:
     deployment: DeploymentService
     display: NullDisplayAdapter | object
     inputs: NullInputAdapter
+
+
+@dataclass(frozen=True)
+class UsbPresentation:
+    badge_label: str
+    tone: str
+    headline: str
+    guidance: str
+    backend_label: str
+    identity_label: str
+    mountpoint_label: str
+    verification_label: str
+    cta_label: str
+    cta_hint: str
 
 
 def create_app(config_path: str | Path | None = None) -> FastAPI:
@@ -65,6 +79,7 @@ def create_app(config_path: str | Path | None = None) -> FastAPI:
         hero_knob_index = _default_knob_index(hero_patch)
         lcd_preview = build_patch_lines(hero_patch) if hero_patch else (" " * 16, " " * 16)
         mount_status = services.deployment.mount_status()
+        usb_ui = _present_usb_status(mount_status)
         return templates.TemplateResponse(
             request,
             "index.html",
@@ -78,6 +93,7 @@ def create_app(config_path: str | Path | None = None) -> FastAPI:
                 "selected_patch_rel_path": selected,
                 "hero_state": _hero_state(hero_patch, current_patch, selected),
                 "mount_status": mount_status,
+                "usb_ui": usb_ui,
                 "companion_source": catalog.companion_source,
                 "notice": notice,
                 "error": error,
@@ -233,6 +249,97 @@ def _redirect_target(path: str, **params: str | None) -> str:
     if not filtered:
         return path
     return f"{path}?{urlencode(filtered)}"
+
+
+def _present_usb_status(status: MountStatus) -> UsbPresentation:
+    tone = "ready" if status.ready and status.state == "mounted" else "pending" if status.ready else "error"
+    badge_label = status.label
+    headline = status.label
+    guidance = status.detail
+
+    if status.state == "identity_missing":
+        badge_label = "Identity Needed"
+        headline = "Set the Endless USB identity"
+        guidance = "Configure usb.expected_uuid or usb.expected_label in config.toml before loading patches."
+    elif status.state == "no_match":
+        badge_label = "Endless Not Found"
+        headline = "Connect the Endless storage volume"
+        guidance = "Put the pedal in USB storage mode, then reconnect it or verify the configured label or UUID."
+    elif status.state == "multiple_matches":
+        badge_label = "Multiple Matches"
+        headline = "More than one USB volume matches"
+        guidance = "Use usb.expected_uuid to target one Endless volume and avoid ambiguous writes."
+    elif status.state == "discovered":
+        badge_label = "Ready to Mount"
+        headline = "Target volume found"
+        guidance = "The matched volume will mount automatically when you load a patch."
+    elif status.state == "mounted":
+        badge_label = "Mounted"
+        headline = "Volume is mounted and writable"
+        guidance = "The matched Endless volume is ready for a verified patch write."
+    elif status.state == "read_only":
+        badge_label = "Read-Only"
+        headline = "Volume is mounted read-only"
+        guidance = "Remount the Endless volume read-write before loading a patch."
+    elif status.state == "mount_failed":
+        badge_label = "Mount Failed"
+        headline = "Automatic mount failed"
+        guidance = "The volume was identified, but the host could not mount it automatically."
+    elif status.state == "mount_missing":
+        badge_label = "Mount Unresolved"
+        headline = "Mountpoint could not be confirmed"
+        guidance = "The host reported a mount, but no writable mountpoint was resolved."
+    elif status.state == "helper_offline":
+        badge_label = "Helper Offline"
+        headline = "Host USB helper is unavailable"
+        guidance = "Start endless-loader-usb-helper on the host before using helper mode."
+
+    backend_label = {
+        "host": "Direct Host USB",
+        "helper": "Host USB Helper",
+    }.get(status.backend, status.backend.upper())
+
+    identity_parts: list[str] = []
+    if status.expected_uuid:
+        identity_parts.append(f"UUID {status.expected_uuid}")
+    if status.expected_label:
+        identity_parts.append(f"Label {status.expected_label}")
+    identity_label = " • ".join(identity_parts) if identity_parts else "Not configured"
+
+    if status.mountpoint:
+        mountpoint_label = status.mountpoint
+    elif status.ready:
+        mountpoint_label = "Will mount automatically on load"
+    else:
+        mountpoint_label = "Unavailable until a single target volume is ready"
+
+    verification_label = (
+        "Last deploy verified"
+        if status.last_verified
+        else "Read-back hash enabled"
+    )
+
+    cta_label = "Load This Patch" if status.ready else "USB Not Ready"
+    cta_hint = (
+        "Load will mount, copy, and verify the selected patch."
+        if status.ready and status.state == "discovered"
+        else "Ready for a verified patch write."
+        if status.ready
+        else guidance
+    )
+
+    return UsbPresentation(
+        badge_label=badge_label,
+        tone=tone,
+        headline=headline,
+        guidance=guidance,
+        backend_label=backend_label,
+        identity_label=identity_label,
+        mountpoint_label=mountpoint_label,
+        verification_label=verification_label,
+        cta_label=cta_label,
+        cta_hint=cta_hint,
+    )
 
 
 def cli_main() -> None:

@@ -180,6 +180,12 @@ code {
   color: var(--muted);
 }
 
+.usb-status__system {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
 .usb-meta {
   margin: 0;
   display: grid;
@@ -284,6 +290,11 @@ code {
 .badge--current {
   color: #09110d;
   background: linear-gradient(180deg, #8cf7b0, #43be69);
+}
+
+.status-pill.is-pending {
+  color: #1a1305;
+  background: linear-gradient(180deg, #ffd289, #ffab2e);
 }
 
 .status-pill.is-error {
@@ -459,6 +470,10 @@ code {
 
 .pedal-actions__meta p {
   margin: 0.2rem 0;
+}
+
+.pedal-actions__hint {
+  color: #d9e6f7;
 }
 
 .patch-detail {

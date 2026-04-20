@@ -28,30 +28,22 @@
   <section class="surface usb-status">
     <div class="usb-status__header">
       <div>
-        <p class="library-group__eyebrow">USB Path</p>
-        <h3>Deployment Status</h3>
+        <p class="library-group__eyebrow">USB Deploy</p>
+        <h3>{{ usb_ui.headline }}</h3>
       </div>
-      <span class="status-pill {% if not mount_status.ready %}is-error{% elif mount_status.state == 'mounted' %}is-ready{% else %}is-secondary{% endif %}">
-        {{ mount_status.label }}
+      <span class="status-pill is-{{ usb_ui.tone }}">
+        {{ usb_ui.badge_label }}
       </span>
     </div>
-    <p class="usb-status__detail">{{ mount_status.detail }}</p>
+    <p class="usb-status__detail">{{ usb_ui.guidance }}</p>
     <dl class="usb-meta">
       <div>
         <dt>Backend</dt>
-        <dd>{{ mount_status.backend|upper }}</dd>
+        <dd>{{ usb_ui.backend_label }}</dd>
       </div>
       <div>
         <dt>Expected Identity</dt>
-        <dd>
-          {% if mount_status.expected_uuid %}
-          UUID {{ mount_status.expected_uuid }}
-          {% elif mount_status.expected_label %}
-          Label {{ mount_status.expected_label }}
-          {% else %}
-          Not configured
-          {% endif %}
-        </dd>
+        <dd>{{ usb_ui.identity_label }}</dd>
       </div>
       <div>
         <dt>Matched Device</dt>
@@ -63,21 +55,14 @@
       </div>
       <div>
         <dt>Mountpoint</dt>
-        <dd>
-          {% if mount_status.mountpoint %}
-          {{ mount_status.mountpoint }}
-          {% elif mount_status.ready %}
-          Will mount on load
-          {% else %}
-          Unavailable
-          {% endif %}
-        </dd>
+        <dd>{{ usb_ui.mountpoint_label }}</dd>
       </div>
       <div>
         <dt>Verification</dt>
-        <dd>{% if mount_status.last_verified %}Last deploy verified{% else %}Read-back hash on deploy{% endif %}</dd>
+        <dd>{{ usb_ui.verification_label }}</dd>
       </div>
     </dl>
+    <p class="usb-status__system">System detail: {{ mount_status.detail }}</p>
   </section>
 
   {% if hero_patch %}
@@ -130,10 +115,11 @@
           <input type="hidden" name="q" value="{{ query }}">
           <input type="hidden" name="selected" value="{{ hero_patch.rel_path }}">
           <button class="button button--load" type="submit" {% if not mount_status.ready %}disabled aria-disabled="true" title="{{ mount_status.detail }}"{% endif %}>
-            {% if mount_status.ready %}Load This Patch{% else %}USB Not Ready{% endif %}
+            {{ usb_ui.cta_label }}
           </button>
         </form>
         <div class="pedal-actions__meta">
+          <p class="pedal-actions__hint">{{ usb_ui.cta_hint }}</p>
           {% if current_state.deployed_at %}
           <p>Last load: {{ current_state.deployed_at }}</p>
           {% endif %}
