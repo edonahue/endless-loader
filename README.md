@@ -1,6 +1,6 @@
 # Endless Loader
 
-`Endless Loader` is a phone-first web server for browsing local `.endl` patches and loading one selected patch onto a connected Polyend Endless pedal. The app is designed for Raspberry Pi OS on Pi 3B/4/5, but the same codebase also runs on Pop!_OS for development and host-side testing.
+`Endless Loader` is a phone-first web server for browsing local `.endl` patches and loading one selected patch onto a connected Polyend Endless pedal. The app is designed for Raspberry Pi OS on Pi 3B/4/5, and the same codebase is intended to run on Ubuntu-family Linux systems including Pop!_OS and standard Ubuntu desktops or mini PCs.
 
 ## What It Does
 
@@ -14,8 +14,28 @@
   - line 2: fixed `4/4/4` knob labels, e.g. `Sust/Tone/Blen`
 - Supports optional companion metadata from `edonahue/FxPatchSDK` through a small manifest file or a GitHub raw fallback with local caching.
 - Supports two deployment modes:
-  - `host`: direct discovery and `udisksctl` control on Raspberry Pi OS or Pop!_OS
+  - `host`: direct discovery and `udisksctl` control on Raspberry Pi OS or Ubuntu-family Linux
   - `helper`: Docker-friendly mode where the web app delegates USB operations to a small host-side helper
+
+## Platform Support
+
+The current app code is portable across:
+
+- Raspberry Pi OS on Pi 3B/4/5
+- Ubuntu 22.04+ and other Ubuntu-family distributions with Python 3.10+
+- Pop!_OS as one Ubuntu-family example, not a special-case target
+
+For `usb.mode = "host"`, the host needs these standard Linux tools available:
+
+- `lsblk`
+- `findmnt`
+- `udisksctl`
+
+On Ubuntu-family systems, those normally come from:
+
+- `util-linux`
+- `udisks2`
+- `python3-venv` for local virtualenv setup
 
 ## Quick Start
 
@@ -24,6 +44,12 @@
    ```bash
    python3 -m venv venv
    venv/bin/pip install -e ".[dev]"
+   ```
+
+   On a fresh Ubuntu-family host, install the common prerequisites first:
+
+   ```bash
+   sudo apt install python3 python3-venv udisks2 util-linux
    ```
 
 2. Copy the sample config and edit it:
@@ -80,7 +106,7 @@ When `usb.mode = "host"`, the app uses:
 - a read-back SHA-256 check when `usb.verify_hash = true`
 - optional `udisksctl unmount` and `power-off` when `usb.auto_eject_after_write = true`
 
-That same flow works on Raspberry Pi OS and Pop!_OS because both expose the same `util-linux` and `udisks2` tools. If you want the highest confidence, set `usb.expected_uuid` instead of relying on a label alone.
+That same flow works on Raspberry Pi OS, Ubuntu, Pop!_OS, and similar Ubuntu-derived systems because they expose the same `util-linux` and `udisks2` tools. If you want the highest confidence, set `usb.expected_uuid` instead of relying on a label alone.
 
 ## Companion Metadata
 
