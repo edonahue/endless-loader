@@ -28,6 +28,7 @@ body {
 body {
   margin: 0;
   color: var(--text);
+  -webkit-text-size-adjust: 100%;
   background:
     radial-gradient(circle at top, rgba(98, 193, 255, 0.16), transparent 28%),
     radial-gradient(circle at 20% 20%, rgba(255, 178, 74, 0.16), transparent 22%),
@@ -51,23 +52,25 @@ code {
 .site-shell {
   max-width: 1220px;
   margin: 0 auto;
-  padding: 1rem 1rem 3rem;
+  padding: 1rem 1rem calc(6.5rem + env(safe-area-inset-bottom, 0px));
 }
 
 .usb-beacon {
   position: fixed;
-  right: 1rem;
-  bottom: 1rem;
+  right: calc(1rem + env(safe-area-inset-right, 0px));
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
   z-index: 20;
   display: inline-flex;
   align-items: center;
   gap: 0.8rem;
   min-width: 12rem;
+  max-width: min(22rem, calc(100vw - 2rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
   padding: 0.8rem 0.95rem;
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(9, 13, 18, 0.9);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.38);
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
 }
 
@@ -302,11 +305,6 @@ code {
   color: var(--text);
   cursor: pointer;
   transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
-}
-
-.button:hover {
-  transform: translateY(-1px);
-  border-color: rgba(255, 255, 255, 0.22);
 }
 
 .button[disabled],
@@ -700,6 +698,13 @@ code {
   padding: 1.4rem;
 }
 
+@media (hover: hover) {
+  .button:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255, 255, 255, 0.22);
+  }
+}
+
 @media (min-width: 760px) {
   .toolbar {
     grid-template-columns: 1fr auto;
@@ -722,9 +727,9 @@ code {
 
 @media (max-width: 759px) {
   .usb-beacon {
-    left: 1rem;
-    right: 1rem;
-    bottom: 0.85rem;
+    left: calc(1rem + env(safe-area-inset-left, 0px));
+    right: calc(1rem + env(safe-area-inset-right, 0px));
+    bottom: calc(0.85rem + env(safe-area-inset-bottom, 0px));
     min-width: 0;
   }
 }
