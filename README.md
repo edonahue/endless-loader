@@ -2,6 +2,8 @@
 
 `Endless Loader` is a phone-first web server for browsing local `.endl` patches and loading one selected patch onto a connected Polyend Endless pedal. The app is designed for Raspberry Pi OS on Pi 3B/4/5, and the same codebase is intended to run on Ubuntu-family Linux systems including Pop!_OS and standard Ubuntu desktops or mini PCs.
 
+_Part of my [Open Workbench](https://erichdonahue.com/workbench) at [erichdonahue.com](https://erichdonahue.com)._
+
 ## What It Does
 
 - Scans a configured patch library for `.endl` files.
