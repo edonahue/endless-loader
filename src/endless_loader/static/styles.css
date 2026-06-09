@@ -177,6 +177,8 @@ code {
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
+  justify-content: flex-start;
+  min-width: 0;
 }
 
 .page {
@@ -246,7 +248,8 @@ code {
   padding: 1rem;
 }
 
-.usb-status__header {
+.usb-status__header,
+.rig-context__header {
   display: flex;
   flex-wrap: wrap;
   align-items: start;
@@ -254,7 +257,8 @@ code {
   gap: 0.8rem;
 }
 
-.usb-status__header h3 {
+.usb-status__header h3,
+.rig-context__header h3 {
   margin: 0.1rem 0 0;
 }
 
@@ -288,6 +292,36 @@ code {
 }
 
 .usb-meta dd {
+  margin: 0;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.rig-context {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1rem;
+}
+
+.rig-context__grid {
+  margin: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.rig-context__grid div {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.rig-context__grid dt {
+  color: var(--amber);
+  font-size: 0.74rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.rig-context__grid dd {
   margin: 0;
   color: var(--text);
   word-break: break-word;
@@ -352,11 +386,13 @@ code {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+  max-width: 100%;
   border-radius: 999px;
   padding: 0.45rem 0.75rem;
   font-size: 0.78rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  overflow-wrap: anywhere;
 }
 
 .status-pill {
@@ -715,6 +751,10 @@ code {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .rig-context__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .hero-grid {
     grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.95fr);
   }
@@ -722,6 +762,10 @@ code {
   .site-header {
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: end;
+  }
+
+  .site-header__status {
+    justify-content: flex-end;
   }
 }
 

@@ -146,6 +146,10 @@ def test_index_and_load_flow(tmp_path: Path) -> None:
     assert "Ready for a verified patch write." in html
     assert "usb-beacon usb-beacon--ready" in html
     assert "Endless USB" in html
+    assert "Companion: Local manifest" in html
+    assert "Rig Context" in html
+    assert "Current Setup" in html
+    assert "NullDisplayAdapter" in html
 
     load_request = Request(
         {
@@ -251,3 +255,4 @@ def test_index_disables_load_when_usb_is_not_ready(tmp_path: Path) -> None:
     assert "Connect the Endless storage volume" in html
     assert "Put the pedal in USB storage mode" in html
     assert "usb-beacon usb-beacon--error" in html
+    assert "Rig Context" in html

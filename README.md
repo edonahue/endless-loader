@@ -1,21 +1,67 @@
 # Endless Loader
 
-`Endless Loader` is a phone-first web server for browsing local `.endl` patches and loading one selected patch onto a connected Polyend Endless pedal. The app is designed for Raspberry Pi OS on Pi 3B/4/5, and the same codebase is intended to run on Ubuntu-family Linux systems including Pop!_OS and standard Ubuntu desktops or mini PCs.
+`Endless Loader` is a phone-first web server for browsing local `.endl` patches and loading one selected patch onto a connected Polyend Endless pedal. It is designed for Raspberry Pi OS on Pi 3B/4/5, and it also runs on Ubuntu-family Linux systems including Pop!_OS and standard Ubuntu desktops or mini PCs.
+
+![Endless Loader desktop console](docs/assets/desktop-console.png)
 
 ## What It Does
 
-- Scans a configured patch library for `.endl` files.
-- Groups patches into `Custom SDK`, `Official Plates`, and `Local Library` families when metadata is available.
-- Presents the current or selected patch as a pedal-shaped hero card with labeled knobs.
-- Uses knob labels as UI affordances: tapping a knob reveals its description and expression-role notes instead of pretending to live-edit pedal parameters.
-- Discovers the correct Endless USB volume by configured label or UUID, mounts it when needed, copies the selected patch, and verifies the write with a read-back hash.
-- Updates an optional 1602 I2C LCD:
-  - line 1: patch name, truncated to 16 characters
-  - line 2: fixed `4/4/4` knob labels, e.g. `Sust/Tone/Blen`
-- Supports optional companion metadata from `edonahue/FxPatchSDK` through a small manifest file or a GitHub raw fallback with local caching.
-- Supports two deployment modes:
-  - `host`: direct discovery and `udisksctl` control on Raspberry Pi OS or Ubuntu-family Linux
-  - `helper`: Docker-friendly mode where the web app delegates USB operations to a small host-side helper
+- Presents patches as a pedal-style control surface with labeled knobs.
+- Discovers the Endless USB storage volume by label or UUID.
+- Mounts the target volume when needed, copies the selected patch, and verifies the write with a read-back hash.
+- Shows clear ready, pending, and error status through the USB panel and floating beacon.
+- Updates an optional 1602 I2C LCD with the current patch name and compact knob labels.
+- Uses optional companion metadata from `edonahue/FxPatchSDK` for richer descriptions, controls, actions, and links.
+- Supports direct host USB control and Docker-friendly helper mode.
+
+## Screenshots
+
+Desktop console:
+
+![Desktop console](docs/assets/desktop-console.png)
+
+iPhone-width console:
+
+![Mobile console](docs/assets/mobile-console.png)
+
+USB not-ready guidance:
+
+![Mobile USB not ready](docs/assets/mobile-usb-not-ready.png)
+
+## Quick Start
+
+Install system prerequisites on Raspberry Pi OS or Ubuntu-family Linux:
+
+```bash
+sudo apt install python3 python3-venv udisks2 util-linux
+```
+
+Install the app:
+
+```bash
+python3 -m venv venv
+venv/bin/pip install -e ".[dev]"
+cp config.example.toml config.toml
+```
+
+Edit `config.toml`:
+
+```toml
+library_root = "/path/to/endl/patches"
+
+[usb]
+mode = "host"
+expected_label = "ENDLESS"
+expected_uuid = ""
+```
+
+Run the server:
+
+```bash
+ENDLESS_LOADER_CONFIG=config.toml venv/bin/endless-loader
+```
+
+Open `http://localhost:8080`.
 
 ## Platform Support
 
@@ -25,74 +71,13 @@ The current app code is portable across:
 - Ubuntu 22.04+ and other Ubuntu-family distributions with Python 3.10+
 - Pop!_OS as one Ubuntu-family example, not a special-case target
 
-For `usb.mode = "host"`, the host needs these standard Linux tools available:
+For `usb.mode = "host"`, the host needs:
 
 - `lsblk`
 - `findmnt`
 - `udisksctl`
 
-On Ubuntu-family systems, those normally come from:
-
-- `util-linux`
-- `udisks2`
-- `python3-venv` for local virtualenv setup
-
-## Quick Start
-
-1. Create a virtualenv and install the app:
-
-   ```bash
-   python3 -m venv venv
-   venv/bin/pip install -e ".[dev]"
-   ```
-
-   On a fresh Ubuntu-family host, install the common prerequisites first:
-
-   ```bash
-   sudo apt install python3 python3-venv udisks2 util-linux
-   ```
-
-2. Copy the sample config and edit it:
-
-   ```bash
-   cp config.example.toml config.toml
-   ```
-
-3. Point `library_root` at a directory containing real `.endl` files.
-
-   Useful local paths from `FxPatchSDK` include:
-
-   - `/home/erich/projects/FxPatchSDK/effects/builds`
-   - `/home/erich/projects/FxPatchSDK/playground/polyend_plates`
-
-4. Configure the USB identity in `config.toml`.
-
-   Use `usb.expected_uuid` for the strongest match, or `usb.expected_label` if the Endless volume label is stable on your machines.
-
-5. Run the server:
-
-   ```bash
-   ENDLESS_LOADER_CONFIG=config.toml venv/bin/python -m endless_loader.main
-   ```
-
-6. Open `http://localhost:8080`.
-
-## Config
-
-`config.example.toml` is the host-run reference.
-
-Important settings:
-
-- `library_root`: directory tree to scan for `.endl` files
-- `pedal_mount_path`: legacy compatibility path for local development
-- `state_path`: JSON state file written by the app
-- `lcd.enabled`, `lcd.bus`, `lcd.address`: optional 1602 I2C backpack settings
-- `companion.fxpatchsdk_path`: optional local checkout of `FxPatchSDK`
-- `usb.mode`: `host` for direct USB control, `helper` for Docker-backed deployments
-- `usb.expected_label` / `usb.expected_uuid`: identity used to select the correct Endless volume
-- `usb.verify_hash`: read the file back and compare hashes after copy
-- `usb.auto_eject_after_write`: optional safe eject after a verified write
-- `usb.helper_endpoint`: helper URL for containerized deployments
+Those normally come from `util-linux` and `udisks2`.
 
 ## USB Certainty Model
 
@@ -106,88 +91,51 @@ When `usb.mode = "host"`, the app uses:
 - a read-back SHA-256 check when `usb.verify_hash = true`
 - optional `udisksctl unmount` and `power-off` when `usb.auto_eject_after_write = true`
 
-That same flow works on Raspberry Pi OS, Ubuntu, Pop!_OS, and similar Ubuntu-derived systems because they expose the same `util-linux` and `udisks2` tools. If you want the highest confidence, set `usb.expected_uuid` instead of relying on a label alone.
+Use `usb.expected_uuid` for the strongest targeting. `usb.expected_label` is useful for first setup, but UUID matching avoids ambiguous writes if multiple removable volumes share a label.
 
-## Companion Metadata
+## Docker Helper Mode
 
-The app does not require `FxPatchSDK`, but it can show richer patch detail when a companion manifest exists at:
+Docker runs the web app in `helper` mode so the container does not manage host USB mounts directly.
 
-```text
-metadata/endless_loader_companion.json
-```
-
-inside the `FxPatchSDK` checkout, or at the corresponding raw GitHub URL.
-
-The expected manifest shape is:
-
-```json
-{
-  "version": 1,
-  "patches": {
-    "phase_90.endl": {
-      "display_name": "Phase 90",
-      "source_family": "custom_sdk",
-      "description": "One-knob Phase 90 style phaser.",
-      "controls": [
-        {
-          "slot": "left",
-          "label": "Unused",
-          "lcd_label": "----",
-          "active": false,
-          "description": "Intentionally unused."
-        }
-      ]
-    }
-  }
-}
-```
-
-A sample companion tree is included under [`samples/fxpatchsdk-companion`](samples/fxpatchsdk-companion).
-
-## Docker Compose
-
-The repository includes:
-
-- `compose.yaml` for the base app
-- `compose.pi.yaml` for Raspberry Pi I2C device passthrough
-- `compose.config.toml` as the container-oriented config sample
-
-Base run:
-
-```bash
-docker build -t endless-loader .
-```
-
-Compose run:
-
-```bash
-docker compose up --build
-```
-
-In Docker, the web app should not manage host USB mounts directly. The included `compose.config.toml` sets `usb.mode = "helper"` and routes deployment calls to `http://host.docker.internal:8755`.
-
-Run the helper on the host first:
+Run the helper on the host:
 
 ```bash
 ENDLESS_LOADER_CONFIG=compose.helper.toml venv/bin/endless-loader-usb-helper
 ```
 
-Then start the app container:
+Start the container:
 
 ```bash
 docker compose up --build
 ```
 
-The compose file already adds `host.docker.internal:host-gateway` so Linux Docker can reach the host helper reliably.
+The included Compose config routes helper calls to `http://host.docker.internal:8755`.
 
-If your host still uses older Docker packaging without the `docker compose` subcommand, use direct Python execution or install the Compose plugin first.
+## Companion Metadata
 
-## LCD Behavior
+The app can show richer patch detail when a companion manifest exists at:
 
-When the LCD adapter is enabled and available:
+```text
+metadata/endless_loader_companion.json
+```
 
-- successful load: line 1 shows patch name, line 2 shows knob labels
-- load error: line 1 shows `Load Error`, line 2 shows the truncated error message
+inside the `FxPatchSDK` checkout, or at the corresponding raw GitHub URL. A sample companion tree is included under [`samples/fxpatchsdk-companion`](samples/fxpatchsdk-companion).
+
+## More Docs
+
+- [Setup](docs/setup.md)
+- [Troubleshooting](docs/troubleshooting.md)
+- [Design Notes](docs/design.md)
+
+## Screenshot Capture
+
+Regenerate README screenshots with:
+
+```bash
+venv/bin/python scripts/capture_screenshots.py
+```
+
+The script requires Firefox on `PATH`.
 
 ## Tests
 

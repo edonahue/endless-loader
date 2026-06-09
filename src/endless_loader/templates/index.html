@@ -61,8 +61,47 @@
         <dt>Verification</dt>
         <dd>{{ usb_ui.verification_label }}</dd>
       </div>
+      <div>
+        <dt>Next Step</dt>
+        <dd>{{ usb_ui.cta_hint }}</dd>
+      </div>
     </dl>
     <p class="usb-status__system">System detail: {{ mount_status.detail }}</p>
+  </section>
+
+  <section class="surface rig-context">
+    <div class="rig-context__header">
+      <div>
+        <p class="library-group__eyebrow">Rig Context</p>
+        <h3>Current Setup</h3>
+      </div>
+    </div>
+    <dl class="rig-context__grid">
+      <div>
+        <dt>Library</dt>
+        <dd>{{ settings.library_root }}</dd>
+      </div>
+      <div>
+        <dt>Patches</dt>
+        <dd>{{ patch_count }}</dd>
+      </div>
+      <div>
+        <dt>Config</dt>
+        <dd>{{ settings.config_path }}</dd>
+      </div>
+      <div>
+        <dt>Companion</dt>
+        <dd>{{ companion_source or "Not loaded" }}</dd>
+      </div>
+      <div>
+        <dt>LCD</dt>
+        <dd>{{ display_backend }}</dd>
+      </div>
+      <div>
+        <dt>USB Helper</dt>
+        <dd>{% if settings.usb.mode == "helper" %}{{ settings.usb.helper_endpoint }}{% else %}Not used in host mode{% endif %}</dd>
+      </div>
+    </dl>
   </section>
 
   {% if hero_patch %}

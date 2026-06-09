@@ -80,6 +80,7 @@ def create_app(config_path: str | Path | None = None) -> FastAPI:
         lcd_preview = build_patch_lines(hero_patch) if hero_patch else (" " * 16, " " * 16)
         mount_status = services.deployment.mount_status()
         usb_ui = _present_usb_status(mount_status)
+        companion_label = _present_companion_source(catalog.companion_source)
         return templates.TemplateResponse(
             request,
             "index.html",
@@ -95,6 +96,9 @@ def create_app(config_path: str | Path | None = None) -> FastAPI:
                 "mount_status": mount_status,
                 "usb_ui": usb_ui,
                 "companion_source": catalog.companion_source,
+                "companion_label": companion_label,
+                "patch_count": len(catalog.patches),
+                "display_backend": services.display.__class__.__name__,
                 "notice": notice,
                 "error": error,
                 "query": q,
@@ -340,6 +344,16 @@ def _present_usb_status(status: MountStatus) -> UsbPresentation:
         cta_label=cta_label,
         cta_hint=cta_hint,
     )
+
+
+def _present_companion_source(source: str | None) -> str | None:
+    if not source:
+        return None
+    if source.startswith("local:"):
+        return "Local manifest"
+    if source.startswith("github:"):
+        return "GitHub cache"
+    return source
 
 
 def cli_main() -> None:
