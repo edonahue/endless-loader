@@ -4,6 +4,8 @@
 
 ![Endless Loader desktop console](docs/assets/desktop-console.png)
 
+_Part of my [Open Workbench](https://erichdonahue.com/workbench) at [erichdonahue.com](https://erichdonahue.com)._
+
 ## What It Does
 
 - Presents patches as a pedal-style control surface with labeled knobs.
